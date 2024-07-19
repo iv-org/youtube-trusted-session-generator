@@ -5,14 +5,25 @@ import json
 import sys
 
 async def main():
+    tab_url = 'https://www.google.com/search?q=me+at+the+zoo&tbm=vid&source=lnms&hl=en&lr=lang_us'
     browser = await start(headless=True)
     tab = browser.main_tab
-    tab.add_handler(cdp.network.RequestWillBeSent, send_handler)
-    page = await browser.get('https://www.youtube.com/embed/jNQXAC9IVRw')
-    await tab.wait(cdp.network.RequestWillBeSent)
-    button_play = await tab.select("#movie_player")
+    page = await browser.get(tab_url)
+    accept_terms = await tab.find("Accept all")
+    await accept_terms.click()
+    page = await browser.get(tab_url)
+    iframe = await tab.select("iframe")
+    iframe_tab: uc.Tab = next(
+        filter(
+            lambda x: str(x.target.target_id) == str(iframe.frame_id), browser.targets
+        )
+    )
+    iframe_tab.websocket_url = iframe_tab.websocket_url.replace("iframe", "page")
+    iframe_tab.add_handler(cdp.network.RequestWillBeSent, send_handler)
+    await iframe_tab.wait(cdp.network.RequestWillBeSent)
+    button_play = await tab.select("div[data-url]")
     await button_play.click()
-    time.sleep(5)
+    await iframe_tab.wait(cdp.network.RequestWillBeSent)
 
 async def send_handler(event: cdp.network.RequestWillBeSent):
     if "/youtubei/v1/player" in event.request.url:
