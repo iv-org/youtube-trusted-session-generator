@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "internally launching GUI (X11 environment)"
+echo "[INFO] internally launching GUI (X11 environment)"
 
 rm -f /tmp/.X0-lock
 
@@ -16,7 +16,7 @@ x11vnc -display :0 -forever -usepw &>/dev/null &
 # Add delay
 sleep 5
 
-echo "launching the python script"
+echo "[INFO] launching the python script"
 
 # Run python script on display 0
 DISPLAY=:0 python index.py
