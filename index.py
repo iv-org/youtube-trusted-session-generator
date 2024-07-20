@@ -6,7 +6,7 @@ import sys
 
 async def main():
     tab_url = 'https://www.google.com/search?q=me+at+the+zoo&tbm=vid&source=lnms&hl=en&lr=lang_us'
-    browser = await start(headless=True)
+    browser = await start(headless=False)
     tab = browser.main_tab
     page = await browser.get(tab_url)
     accept_terms = await tab.find("Accept all")
