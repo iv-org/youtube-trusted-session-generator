@@ -5,30 +5,15 @@ import json
 import sys
 
 async def main():
-    tab_url = 'https://www.google.com/search?q=me+at+the+zoo&tbm=vid&source=lnms&hl=en&lr=lang_us'
-    print("[INFO] launching browser.")
     browser = await start(headless=False)
+    print("[INFO] launching browser.")
     tab = browser.main_tab
-    page = await browser.get(tab_url)
-    accept_terms = await tab.find("Accept all")
-    await accept_terms.click()
-    print("[INFO] accepting cookies.")
-    page = await browser.get(tab_url)
+    tab.add_handler(cdp.network.RequestWillBeSent, send_handler)
+    page = await browser.get('https://www.youtube.com/embed/jNQXAC9IVRw')
     await tab.wait(cdp.network.RequestWillBeSent)
-    iframe = await tab.select("iframe")
-    iframe_tab: uc.Tab = next(
-        filter(
-            lambda x: str(x.target.target_id) == str(iframe.frame_id), browser.targets
-        )
-    )
-    print("[INFO] finding youtube iframe.")
-    iframe_tab.websocket_url = iframe_tab.websocket_url.replace("iframe", "page")
-    iframe_tab.add_handler(cdp.network.RequestWillBeSent, send_handler)
-    await iframe_tab.wait(cdp.network.RequestWillBeSent)
-    button_play = await tab.select("div[data-url]")
+    button_play = await tab.select("#movie_player")
     await button_play.click()
-    print("[INFO] click on first youtube video.")
-    await iframe_tab.wait(cdp.network.RequestWillBeSent)
+    await tab.wait(cdp.network.RequestWillBeSent)
     print("[INFO] waiting additional 30 seconds for slower connections.")
     await tab.sleep(30)
 
