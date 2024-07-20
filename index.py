@@ -29,7 +29,8 @@ async def main():
     await button_play.click()
     print("[INFO] click on first youtube video.")
     await iframe_tab.wait(cdp.network.RequestWillBeSent)
-    time.sleep(5)
+    print("[INFO] waiting additional 30 seconds for slower connections.")
+    await tab.sleep(30)
 
 async def send_handler(event: cdp.network.RequestWillBeSent):
     if "/youtubei/v1/player" in event.request.url:
