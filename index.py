@@ -12,6 +12,7 @@ async def main():
     accept_terms = await tab.find("Accept all")
     await accept_terms.click()
     page = await browser.get(tab_url)
+    await tab.wait(cdp.network.RequestWillBeSent)
     iframe = await tab.select("iframe")
     iframe_tab: uc.Tab = next(
         filter(
