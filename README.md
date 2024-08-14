@@ -4,6 +4,10 @@
 
 This script will output two parameters: po_token and visitor_data. Needed for passing YouTube checks in Invidious.
 
+## Requirement(s)
+
+- Run the script on the same public IP address as the Invidious server. Not necessarily the same machine, just the same public IP address.
+
 ## Tutorial without Docker
 1. Install Chromium or Google Chrome.
 2. Create a new virtualenv: `virtualenv venv`
