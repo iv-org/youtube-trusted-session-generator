@@ -12,7 +12,8 @@ These identity tokens (po_token and visitor_data) generated using this tool will
 
 ## Requirement(s)
 
-- Run the script on the same public IP address as the Invidious server. Not necessarily the same machine, just the same public IP address.
+- You have to run this command on the same public IP address as the one blocked by YouTube. Not necessarily the same machine, just the same public IP address.  
+  Subsequent usage of this same token will work on the same IP range or even the same ASN. The point is to generate this token on a blocked IP as "unblocked" IP addresses seems to not generate a token valid for passing the checks on a blocked IP.  
 
 ## Tutorial without Docker
 1. Install Chromium or Google Chrome.
