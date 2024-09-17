@@ -69,7 +69,7 @@ class PotokenExtractor:
         }
         return token_info
 
-    async def _update(self):
+    async def _update(self) -> None:
         if self._ongoing_update.locked():
             logging.debug('update is already in progress')
             return
@@ -82,18 +82,32 @@ class PotokenExtractor:
             tab = browser.main_tab
             tab.add_handler(nodriver.cdp.network.RequestWillBeSent, self._send_handler)
             await tab.get('https://www.youtube.com/embed/jNQXAC9IVRw')
-            player = await tab.select("#movie_player")
-            await player.click()
-
-            try:
-                await asyncio.wait_for(self._extraction_done.wait(), timeout=30)
-            except asyncio.TimeoutError:
-                logging.warning(f'update failed')
-            else:
-                logging.info('update was succeessful')
-
+            player_clicked = await self._click_on_player(tab)
+            if player_clicked:
+                await self._wait_for_handler()
             await tab.close()
             browser.stop()
+
+    @staticmethod
+    async def _click_on_player(tab) -> bool:
+        try:
+            player = await tab.select("#movie_player", 10)
+        except asyncio.TimeoutError:
+            logging.warning(f'update failed: unable to locate video player on the page')
+            return False
+        else:
+            await player.click()
+            return True
+
+    async def _wait_for_handler(self) -> bool:
+        try:
+            await asyncio.wait_for(self._extraction_done.wait(), timeout=30)
+        except asyncio.TimeoutError:
+            logging.warning(f'update failed: timeout waiting for outgoing API request')
+            return False
+        else:
+            logging.info('update was succeessful')
+            return True
 
     async def _send_handler(self, event: nodriver.cdp.network.RequestWillBeSent):
         if not event.request.method == 'POST':
