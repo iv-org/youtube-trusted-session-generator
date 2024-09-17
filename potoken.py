@@ -4,7 +4,7 @@ import json
 import logging
 import time
 from socketserver import ThreadingMixIn
-from tempfile import TemporaryDirectory
+from tempfile import mkdtemp
 from typing import Callable, Optional, Tuple
 from wsgiref.simple_server import WSGIServer, make_server
 
@@ -15,7 +15,7 @@ class PotokenExtractor:
 
     def __init__(self, loop: asyncio.AbstractEventLoop, update_interfal: float = 3600 * 12) -> None:
         self.update_interval: float = update_interfal
-        self.profile_path = TemporaryDirectory()  # cleaned up on exit by nodriver
+        self.profile_path = mkdtemp()  # cleaned up on exit by nodriver
         self._loop = loop
         self._token_info: Optional[dict] = None
         self._ongoing_update: asyncio.Lock = asyncio.Lock()
@@ -78,7 +78,7 @@ class PotokenExtractor:
             logging.info(f'update started')
             self._extraction_done.clear()
 
-            browser = await nodriver.start(headless=False, user_data_dir=self.profile_path.name)
+            browser = await nodriver.start(headless=False, user_data_dir=self.profile_path)
             tab = browser.main_tab
             tab.add_handler(nodriver.cdp.network.RequestWillBeSent, self._send_handler)
             await tab.get('https://www.youtube.com/embed/jNQXAC9IVRw')
