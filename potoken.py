@@ -10,6 +10,8 @@ from wsgiref.simple_server import WSGIServer, make_server
 
 import nodriver
 
+logger = logging.getLogger('potoken')
+
 
 class PotokenExtractor:
 
@@ -34,22 +36,22 @@ class PotokenExtractor:
         while True:
             try:
                 await asyncio.wait_for(self._update_requested.wait(), timeout=self.update_interval)
-                logging.debug('initiating force update')
+                logger.debug('initiating force update')
             except asyncio.TimeoutError:
-                logging.debug('initiating scheduled update')
+                logger.debug('initiating scheduled update')
             await self._update()
             self._update_requested.clear()
 
     def request_update(self) -> bool:
         """Request immediate update, return False if update request is already set"""
         if self._ongoing_update.locked():
-            logging.debug('update process is already running')
+            logger.debug('update process is already running')
             return False
         if self._update_requested.is_set():
-            logging.debug('force update has already been requested')
+            logger.debug('force update has already been requested')
             return False
         self._loop.call_soon_threadsafe(self._update_requested.set)
-        logging.debug('force update requested')
+        logger.debug('force update requested')
         return True
 
     @staticmethod
@@ -60,7 +62,7 @@ class PotokenExtractor:
             visitor_data = post_data_json['context']['client']['visitorData']
             potoken = post_data_json['serviceIntegrityDimensions']['poToken']
         except (json.JSONDecodeError, TypeError, KeyError) as e:
-            logging.warning(f'failed to extract token from request: {type(e)}, {e}')
+            logger.warning(f'failed to extract token from request: {type(e)}, {e}')
             return None
         token_info = {
             'updated': int(time.time()),
@@ -71,11 +73,11 @@ class PotokenExtractor:
 
     async def _update(self) -> None:
         if self._ongoing_update.locked():
-            logging.debug('update is already in progress')
+            logger.debug('update is already in progress')
             return
 
         async with self._ongoing_update:
-            logging.info(f'update started')
+            logger.info(f'update started')
             self._extraction_done.clear()
 
             browser = await nodriver.start(headless=False, user_data_dir=self.profile_path)
@@ -93,7 +95,7 @@ class PotokenExtractor:
         try:
             player = await tab.select("#movie_player", 10)
         except asyncio.TimeoutError:
-            logging.warning(f'update failed: unable to locate video player on the page')
+            logger.warning(f'update failed: unable to locate video player on the page')
             return False
         else:
             await player.click()
@@ -103,10 +105,10 @@ class PotokenExtractor:
         try:
             await asyncio.wait_for(self._extraction_done.wait(), timeout=30)
         except asyncio.TimeoutError:
-            logging.warning(f'update failed: timeout waiting for outgoing API request')
+            logger.warning(f'update failed: timeout waiting for outgoing API request')
             return False
         else:
-            logging.info('update was succeessful')
+            logger.info('update was succeessful')
             return True
 
     async def _send_handler(self, event: nodriver.cdp.network.RequestWillBeSent):
@@ -117,7 +119,7 @@ class PotokenExtractor:
         token_info = self._extract_token(event.request)
         if token_info is None:
             return
-        logging.info(f'new token: {token_info}')
+        logger.info(f'new token: {token_info}')
         self._token_info = token_info
         self._extraction_done.set()
 
@@ -179,7 +181,7 @@ class PotokenServer:
         return [page.encode('utf8')]
 
     def run(self):
-        logging.info(f'Starting web-server at {self.bind_address}:{self.port}')
+        logger.info(f'Starting web-server at {self.bind_address}:{self.port}')
         self._httpd = make_server(self.bind_address, self.port, self.app, ThreadingWSGIServer)
         with self._httpd:
             self._httpd.serve_forever()
@@ -207,7 +209,7 @@ def main(update_interval, bind_address, port) -> None:
         # to ensure process exit code is 1 on error
         raise
     except (KeyboardInterrupt, asyncio.CancelledError):
-        logging.info('Stopping...')
+        logger.info('Stopping...')
     finally:
         potoken_server.stop()
 
