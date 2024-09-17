@@ -72,6 +72,12 @@ class PotokenExtractor:
         return token_info
 
     async def _update(self) -> None:
+        try:
+            await asyncio.wait_for(self._perform_update(), timeout=600)
+        except asyncio.TimeoutError:
+            logger.error(f'update failed: hard limit timeout exceeded. Browser might be failing to start properly')
+
+    async def _perform_update(self) -> None:
         if self._ongoing_update.locked():
             logger.debug('update is already in progress')
             return
