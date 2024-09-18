@@ -3,6 +3,7 @@ import asyncio
 import dataclasses
 import json
 import logging
+import sys
 import time
 from dataclasses import dataclass
 from socketserver import ThreadingMixIn
@@ -212,18 +213,35 @@ class PotokenServer:
         self._httpd.shutdown()
 
 
-def main(update_interval: int, bind_address: str, port: int) -> None:
-    loop = nodriver.loop()
+def print_token_and_exit(token_info: Optional[TokenInfo]):
+    if token_info is None:
+        logger.warning('failed to extract token')
+        sys.exit(1)
+    visitor_data = token_info.visitor_data
+    po_token = token_info.potoken
+
+    print('visitor_data: ' + visitor_data)
+    print('po_token: ' + po_token)
+    if len(po_token) < 160:
+        logger.warning("there is a high chance that the potoken generated won't work. Please try again on another internet connection")
+        sys.exit(1)
+    sys.exit(0)
+
+
+async def run(loop: asyncio.AbstractEventLoop, oneshot: bool,
+              update_interval: int, bind_address: str, port: int) -> None:
 
     potoken_extractor = PotokenExtractor(loop, update_interval=update_interval)
-    potoken_server = PotokenServer(potoken_extractor, port=port, bind_address=bind_address)
+    if oneshot:
+        token = await potoken_extractor.run_once()
+        print_token_and_exit(token)
 
     extractor_task = loop.create_task(potoken_extractor.run())
+    potoken_server = PotokenServer(potoken_extractor, port=port, bind_address=bind_address)
     server_task = loop.create_task(asyncio.to_thread(potoken_server.run))
 
     try:
-        main_task = asyncio.gather(extractor_task, server_task)
-        loop.run_until_complete(main_task)
+        await asyncio.gather(extractor_task, server_task)
     except Exception:
         # exceptions raised by the tasks are intentionally propogated
         # to ensure process exit code is 1 on error
@@ -254,6 +272,8 @@ Retrieve potoken using Chromium runned by nodriver, serve it on a json endpoint
     token regeneration by accessing http://127.0.0.1:8080/update
     '''
     parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('-o', '--oneshot', action='store_true', default=False,
+                        help='Do not start server. Generate token once, print it and exit')
     parser.add_argument('--update-interval', '-u', type=int, default=3600,
                         help='How ofthen new token is generated, in seconds (default: %(default)s)')
     parser.add_argument('--port', '-p', type=int, default=8080,
@@ -263,7 +283,13 @@ Retrieve potoken using Chromium runned by nodriver, serve it on a json endpoint
     return parser.parse_args()
 
 
-if __name__ == '__main__':
-    set_logging()
+def main() -> None:
     args = args_parse()
-    main(update_interval=args.update_interval, bind_address=args.bind, port=args.port)
+    set_logging(logging.WARNING if args.oneshot else logging.INFO)
+    loop = nodriver.loop()
+    main_task = run(loop, oneshot=args.oneshot, update_interval=args.update_interval, bind_address=args.bind, port=args.port)
+    loop.run_until_complete(main_task)
+
+
+if __name__ == '__main__':
+    main()
