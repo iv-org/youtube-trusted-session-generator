@@ -20,7 +20,7 @@ These identity tokens (po_token and visitor_data) generated using this tool will
 2. Create a new virtualenv: `virtualenv venv`
 3. Activate the virtualenv: `source venv/bin/activate`
 4. Install the dependencies: `pip install -r requirements.txt`
-5. Run the script: `python index.py`
+5. Run the script: `python potoken-generator.py --oneshot`
 6. Copy paste the values of these the two parameters (po_token and visitor_data) in config.yaml
    ```
    po_token: XXX
