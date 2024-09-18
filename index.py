@@ -15,8 +15,8 @@ async def main(loop):
     if token_info is None:
         logger.warning('failed to extract token')
         sys.exit(1)
-    visitor_data = token_info['visitor_data']
-    po_token = token_info['potoken']
+    visitor_data = token_info.visitor_data
+    po_token = token_info.potoken
 
     print('visitor_data: ' + visitor_data)
     print('po_token: ' + po_token)

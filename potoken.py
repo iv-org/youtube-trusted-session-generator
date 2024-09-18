@@ -1,8 +1,10 @@
 import argparse
 import asyncio
+import dataclasses
 import json
 import logging
 import time
+from dataclasses import dataclass
 from socketserver import ThreadingMixIn
 from tempfile import mkdtemp
 from typing import Any, Callable, Dict, Optional, Tuple
@@ -13,21 +15,33 @@ import nodriver
 logger = logging.getLogger('potoken')
 
 
+@dataclass
+class TokenInfo:
+    updated: int
+    potoken: str
+    visitor_data: str
+
+    def to_json(self) -> str:
+        as_dict = dataclasses.asdict(self)
+        as_json = json.dumps(as_dict)
+        return as_json
+
+
 class PotokenExtractor:
 
     def __init__(self, loop: asyncio.AbstractEventLoop, update_interval: float = 3600) -> None:
         self.update_interval: float = update_interval
         self.profile_path = mkdtemp()  # cleaned up on exit by nodriver
         self._loop = loop
-        self._token_info: Optional[dict] = None
+        self._token_info: Optional[TokenInfo] = None
         self._ongoing_update: asyncio.Lock = asyncio.Lock()
         self._extraction_done: asyncio.Event = asyncio.Event()
         self._update_requested: asyncio.Event = asyncio.Event()
 
-    def get(self) -> Optional[dict]:
+    def get(self) -> Optional[TokenInfo]:
         return self._token_info
 
-    async def run_once(self) -> Optional[dict]:
+    async def run_once(self) -> Optional[TokenInfo]:
         await self._update()
         return self.get()
 
@@ -55,7 +69,7 @@ class PotokenExtractor:
         return True
 
     @staticmethod
-    def _extract_token(request: nodriver.cdp.network.Request) -> Optional[dict]:
+    def _extract_token(request: nodriver.cdp.network.Request) -> Optional[TokenInfo]:
         post_data = request.post_data
         try:
             post_data_json = json.loads(post_data)
@@ -64,11 +78,11 @@ class PotokenExtractor:
         except (json.JSONDecodeError, TypeError, KeyError) as e:
             logger.warning(f'failed to extract token from request: {type(e)}, {e}')
             return None
-        token_info = {
-            'updated': int(time.time()),
-            'potoken': potoken,
-            'visitor_data': visitor_data
-        }
+        token_info = TokenInfo(
+            updated=int(time.time()),
+            potoken=potoken,
+            visitor_data=visitor_data
+        )
         return token_info
 
     async def _update(self) -> None:
@@ -125,7 +139,7 @@ class PotokenExtractor:
         token_info = self._extract_token(event.request)
         if token_info is None:
             return
-        logger.info(f'new token: {token_info}')
+        logger.info(f'new token: {token_info.to_json()}')
         self._token_info = token_info
         self._extraction_done.set()
 
@@ -152,7 +166,7 @@ class PotokenServer:
         else:
             status = '200 OK'
             headers = [('Content-Type', 'application/json')]
-            page = json.dumps(token)
+            page = token.to_json()
         return status, headers, page
 
     def request_update(self) -> Tuple[str, list, str]:
