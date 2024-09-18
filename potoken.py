@@ -5,7 +5,7 @@ import logging
 import time
 from socketserver import ThreadingMixIn
 from tempfile import mkdtemp
-from typing import Callable, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 from wsgiref.simple_server import WSGIServer, make_server
 
 import nodriver
@@ -31,7 +31,7 @@ class PotokenExtractor:
         await self._update()
         return self.get()
 
-    async def run(self):
+    async def run(self) -> None:
         await self._update()
         while True:
             try:
@@ -97,7 +97,7 @@ class PotokenExtractor:
             browser.stop()
 
     @staticmethod
-    async def _click_on_player(tab) -> bool:
+    async def _click_on_player(tab: nodriver.Tab) -> bool:
         try:
             player = await tab.select('#movie_player', 10)
         except asyncio.TimeoutError:
@@ -117,7 +117,7 @@ class PotokenExtractor:
             logger.info('update was succeessful')
             return True
 
-    async def _send_handler(self, event: nodriver.cdp.network.RequestWillBeSent):
+    async def _send_handler(self, event: nodriver.cdp.network.RequestWillBeSent) -> None:
         if not event.request.method == 'POST':
             return
         if '/youtubei/v1/player' not in event.request.url:
@@ -132,12 +132,12 @@ class PotokenExtractor:
 
 class ThreadingWSGIServer(WSGIServer, ThreadingMixIn):
     """Thread per request HTTP server."""
-    daemon_threads = True
+    daemon_threads: bool = True
 
 
 class PotokenServer:
 
-    def __init__(self, potoken_extractor: PotokenExtractor, port: int = 8080, bind_address: str = '0.0.0.0'):
+    def __init__(self, potoken_extractor: PotokenExtractor, port: int = 8080, bind_address: str = '0.0.0.0') -> None:
         self.port = port
         self.bind_address = bind_address
         self._potoken_extractor = potoken_extractor
@@ -177,7 +177,7 @@ class PotokenServer:
         }
         return handlers.get(route) or handlers['/404']
 
-    def app(self, environ, start_response):
+    def app(self, environ: Dict[str, Any], start_response):
         route = environ['PATH_INFO']
 
         handler = self.get_route_handler(route)
@@ -186,19 +186,19 @@ class PotokenServer:
         start_response(status, headers)
         return [page.encode('utf8')]
 
-    def run(self):
+    def run(self) -> None:
         logger.info(f'Starting web-server at {self.bind_address}:{self.port}')
         self._httpd = make_server(self.bind_address, self.port, self.app, ThreadingWSGIServer)
         with self._httpd:
             self._httpd.serve_forever()
 
-    def stop(self):
+    def stop(self) -> None:
         if self._httpd is None:
             return
         self._httpd.shutdown()
 
 
-def main(update_interval, bind_address, port) -> None:
+def main(update_interval: int, bind_address: str, port: int) -> None:
     loop = nodriver.loop()
 
     potoken_extractor = PotokenExtractor(loop, update_interval=update_interval)
@@ -220,7 +220,7 @@ def main(update_interval, bind_address, port) -> None:
         potoken_server.stop()
 
 
-def set_logging(log_level=logging.DEBUG):
+def set_logging(log_level: int = logging.DEBUG) -> None:
     log_format = '%(asctime)s.%(msecs)03d [%(name)s] [%(levelname)s] %(message)s'
     datefmt = '%Y/%m/%d %H:%M:%S'
     logging.basicConfig(level=log_level, format=log_format, datefmt=datefmt)
@@ -230,7 +230,7 @@ def set_logging(log_level=logging.DEBUG):
     logging.getLogger('websockets').setLevel(logging.WARNING)
 
 
-def args_parse():
+def args_parse() -> argparse.Namespace:
     description = '''
 Retrieve potoken using Chromium runned by nodriver, serve it on a json endpoint
 
