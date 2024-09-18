@@ -146,7 +146,7 @@ class PotokenServer:
     def get_potoken(self) -> Tuple[str, list, str]:
         token = self._potoken_extractor.get()
         if token is None:
-            status = '502 Bad Gateway'
+            status = '503 Service Unavailable'
             headers = [("Content-Type", "text/plain")]
             page = 'Token has not yet been generated, try again later.'
         else:
