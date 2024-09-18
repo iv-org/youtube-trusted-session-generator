@@ -15,8 +15,8 @@ logger = logging.getLogger('potoken')
 
 class PotokenExtractor:
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, update_interfal: float = 3600 * 12) -> None:
-        self.update_interval: float = update_interfal
+    def __init__(self, loop: asyncio.AbstractEventLoop, update_interval: float = 3600) -> None:
+        self.update_interval: float = update_interval
         self.profile_path = mkdtemp()  # cleaned up on exit by nodriver
         self._loop = loop
         self._token_info: Optional[dict] = None
@@ -75,7 +75,7 @@ class PotokenExtractor:
         try:
             await asyncio.wait_for(self._perform_update(), timeout=600)
         except asyncio.TimeoutError:
-            logger.error(f'update failed: hard limit timeout exceeded. Browser might be failing to start properly')
+            logger.error('update failed: hard limit timeout exceeded. Browser might be failing to start properly')
 
     async def _perform_update(self) -> None:
         if self._ongoing_update.locked():
@@ -83,7 +83,7 @@ class PotokenExtractor:
             return
 
         async with self._ongoing_update:
-            logger.info(f'update started')
+            logger.info('update started')
             self._extraction_done.clear()
 
             browser = await nodriver.start(headless=False, user_data_dir=self.profile_path)
@@ -99,9 +99,9 @@ class PotokenExtractor:
     @staticmethod
     async def _click_on_player(tab) -> bool:
         try:
-            player = await tab.select("#movie_player", 10)
+            player = await tab.select('#movie_player', 10)
         except asyncio.TimeoutError:
-            logger.warning(f'update failed: unable to locate video player on the page')
+            logger.warning('update failed: unable to locate video player on the page')
             return False
         else:
             await player.click()
@@ -111,7 +111,7 @@ class PotokenExtractor:
         try:
             await asyncio.wait_for(self._extraction_done.wait(), timeout=30)
         except asyncio.TimeoutError:
-            logger.warning(f'update failed: timeout waiting for outgoing API request')
+            logger.warning('update failed: timeout waiting for outgoing API request')
             return False
         else:
             logger.info('update was succeessful')
@@ -120,7 +120,7 @@ class PotokenExtractor:
     async def _send_handler(self, event: nodriver.cdp.network.RequestWillBeSent):
         if not event.request.method == 'POST':
             return
-        if not '/youtubei/v1/player' in event.request.url:
+        if '/youtubei/v1/player' not in event.request.url:
             return
         token_info = self._extract_token(event.request)
         if token_info is None:
@@ -147,17 +147,17 @@ class PotokenServer:
         token = self._potoken_extractor.get()
         if token is None:
             status = '503 Service Unavailable'
-            headers = [("Content-Type", "text/plain")]
+            headers = [('Content-Type', 'text/plain')]
             page = 'Token has not yet been generated, try again later.'
         else:
             status = '200 OK'
-            headers = [("Content-Type", "application/json")]
+            headers = [('Content-Type', 'application/json')]
             page = json.dumps(token)
         return status, headers, page
 
     def request_update(self) -> Tuple[str, list, str]:
         status = '200 OK'
-        headers = [("Content-Type", "text/plain")]
+        headers = [('Content-Type', 'text/plain')]
 
         accepted = self._potoken_extractor.request_update()
         if accepted:
@@ -170,7 +170,7 @@ class PotokenServer:
     def get_route_handler(self, route: str) -> Callable[[], Tuple[str, list, str]]:
         handlers = {
             # handler is a function returning a tuple of status, headers, page text
-            '/404': lambda: ('404 Not Found', [("Content-Type", "text/plain")], 'Not Found'),
+            '/404': lambda: ('404 Not Found', [('Content-Type', 'text/plain')], 'Not Found'),
             '/': lambda: ('302 Found', [('Location', '/token')], '/token'),
             '/token': self.get_potoken,
             '/update': self.request_update
@@ -201,7 +201,7 @@ class PotokenServer:
 def main(update_interval, bind_address, port) -> None:
     loop = nodriver.loop()
 
-    potoken_extractor = PotokenExtractor(loop, update_interfal=update_interval)
+    potoken_extractor = PotokenExtractor(loop, update_interval=update_interval)
     potoken_server = PotokenServer(potoken_extractor, port=port, bind_address=bind_address)
 
     extractor_task = loop.create_task(potoken_extractor.run())
