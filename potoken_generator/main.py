@@ -30,8 +30,8 @@ def print_token_and_exit(token_info: Optional[TokenInfo]):
 async def run(loop: asyncio.AbstractEventLoop, oneshot: bool,
               update_interval: int, bind_address: str, port: int) -> None:
     potoken_extractor = PotokenExtractor(loop, update_interval=update_interval)
+    token = await potoken_extractor.run_once()
     if oneshot:
-        token = await potoken_extractor.run_once()
         print_token_and_exit(token)
 
     extractor_task = loop.create_task(potoken_extractor.run())
