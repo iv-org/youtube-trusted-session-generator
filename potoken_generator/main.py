@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import logging
 import sys
+from pathlib import Path
 from typing import Optional
 
 import nodriver
@@ -28,8 +29,9 @@ def print_token_and_exit(token_info: Optional[TokenInfo]):
 
 
 async def run(loop: asyncio.AbstractEventLoop, oneshot: bool,
-              update_interval: int, bind_address: str, port: int) -> None:
-    potoken_extractor = PotokenExtractor(loop, update_interval=update_interval)
+              update_interval: int, bind_address: str, port: int,
+              browser_path: Optional[Path] = None) -> None:
+    potoken_extractor = PotokenExtractor(loop, update_interval=update_interval, browser_path=browser_path)
     token = await potoken_extractor.run_once()
     if oneshot:
         print_token_and_exit(token)
@@ -78,6 +80,8 @@ Retrieve potoken using Chromium runned by nodriver, serve it on a json endpoint
                         help='Port webserver is listening on (default: %(default)s)')
     parser.add_argument('--bind', '-b', default='0.0.0.0',
                         help='Address webserver binds to (default: %(default)s)')
+    parser.add_argument('--chrome-path', '-c', type=Path, default=None,
+                        help='Path to the Chromiun executable')
     return parser.parse_args()
 
 
@@ -85,5 +89,10 @@ def main() -> None:
     args = args_parse()
     set_logging(logging.WARNING if args.oneshot else logging.INFO)
     loop = nodriver.loop()
-    main_task = run(loop, oneshot=args.oneshot, update_interval=args.update_interval, bind_address=args.bind, port=args.port)
+    main_task = run(loop, oneshot=args.oneshot,
+                    update_interval=args.update_interval,
+                    bind_address=args.bind,
+                    port=args.port,
+                    browser_path=args.chrome_path
+                    )
     loop.run_until_complete(main_task)

@@ -4,6 +4,7 @@ import json
 import logging
 import time
 from dataclasses import dataclass
+from pathlib import Path
 from tempfile import mkdtemp
 from typing import Optional
 
@@ -26,8 +27,11 @@ class TokenInfo:
 
 class PotokenExtractor:
 
-    def __init__(self, loop: asyncio.AbstractEventLoop, update_interval: float = 3600) -> None:
+    def __init__(self, loop: asyncio.AbstractEventLoop,
+                 update_interval: float = 3600,
+                 browser_path: Optional[Path] = None) -> None:
         self.update_interval: float = update_interval
+        self.browser_path: Optional[Path] = browser_path
         self.profile_path = mkdtemp()  # cleaned up on exit by nodriver
         self._loop = loop
         self._token_info: Optional[TokenInfo] = None
@@ -96,8 +100,13 @@ class PotokenExtractor:
         async with self._ongoing_update:
             logger.info('update started')
             self._extraction_done.clear()
-
-            browser = await nodriver.start(headless=False, user_data_dir=self.profile_path)
+            try:
+                browser = await nodriver.start(headless=False,
+                                               browser_executable_path=self.browser_path,
+                                               user_data_dir=self.profile_path)
+            except FileNotFoundError as e:
+                msg = "could not find Chromium. Make sure it's installed or provide direct path to the executable"
+                raise FileNotFoundError(msg) from e
             tab = browser.main_tab
             tab.add_handler(nodriver.cdp.network.RequestWillBeSent, self._send_handler)
             await tab.get('https://www.youtube.com/embed/jNQXAC9IVRw')
