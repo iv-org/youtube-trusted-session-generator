@@ -12,7 +12,7 @@ RUN apk add --no-cache \
       chromium \
       chromium-chromedriver
 
-WORKDIR /usr/app/src
+WORKDIR /app
 COPY index.py requirements.txt ./
 
 RUN pip install --no-cache-dir -r requirements.txt

@@ -36,3 +36,7 @@ These identity tokens (po_token and visitor_data) generated using this tool will
    visitor_data: XXX
    ```
 3. Restart Invidious.
+
+## Why running as root for Docker?
+
+In "headless: false", Chromium does not support sanboxing when it is not ran by root user.
