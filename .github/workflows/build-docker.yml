@@ -37,3 +37,13 @@ jobs:
                   tags: quay.io/invidious/youtube-trusted-session-generator:latest
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
+            - name: Build and push with HTTP API
+              uses: docker/build-push-action@v5
+              with:
+                  context: .
+                  file: ./Dockerfile.webserver
+                  platforms: linux/amd64,linux/arm64/v8
+                  push: true
+                  tags: quay.io/invidious/youtube-trusted-session-generator:webserver
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
