@@ -1,4 +1,4 @@
-FROM python:3.12-alpine3.19
+FROM python:3.13-alpine3.20
 
 # Install dependencies
 RUN apk add --no-cache \
@@ -13,7 +13,8 @@ RUN apk add --no-cache \
       chromium-chromedriver
 
 WORKDIR /app
-COPY index.py requirements.txt ./
+COPY potoken-generator.py requirements.txt ./
+COPY potoken_generator/ ./potoken_generator/
 
 RUN pip install --no-cache-dir -r requirements.txt
 
