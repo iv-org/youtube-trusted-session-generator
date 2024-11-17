@@ -11,4 +11,4 @@ sleep 2
 echo "[INFO] launching chromium instance"
 
 # Run python script on display 0
-DISPLAY=:99 python potoken-generator.py --oneshot
+DISPLAY=:99 python potoken-generator.py --bind 0.0.0.0
