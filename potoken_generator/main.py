@@ -78,7 +78,7 @@ Retrieve potoken using Chromium runned by nodriver, serve it on a json endpoint
                         help='How ofthen new token is generated, in seconds (default: %(default)s)')
     parser.add_argument('--port', '-p', type=int, default=8080,
                         help='Port webserver is listening on (default: %(default)s)')
-    parser.add_argument('--bind', '-b', default='0.0.0.0',
+    parser.add_argument('--bind', '-b', default='127.0.0.1',
                         help='Address webserver binds to (default: %(default)s)')
     parser.add_argument('--chrome-path', '-c', type=Path, default=None,
                         help='Path to the Chromiun executable')

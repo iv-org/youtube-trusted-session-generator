@@ -2,7 +2,7 @@
 
 ## Description
 
-This script will output two parameters: po_token and visitor_data. Needed for passing YouTube checks in Invidious.
+This script will output two parameters: po_token and visitor_data. Needed for passing YouTube checks in Invidious or the program that use the po_token functionality.
 
 ## What's po_token
 
@@ -15,7 +15,18 @@ These identity tokens (po_token and visitor_data) generated using this tool will
 - You have to run this command on the same public IP address as the one blocked by YouTube. Not necessarily the same machine, just the same public IP address.  
   Subsequent usage of this same token will work on the same IP range or even the same ASN. The point is to generate this token on a blocked IP as "unblocked" IP addresses seems to not generate a token valid for passing the checks on a blocked IP.  
 
-## Tutorial without Docker
+## Tutorials for "oneshot" command: run the program and get the po_token and visitor_data values
+
+### Tutorial with Docker
+1. Run the script: `docker run quay.io/invidious/youtube-trusted-session-generator`
+2. Copy paste the values of these the two parameters (po_token and visitor_data) in config.yaml
+   ```
+   po_token: XXX
+   visitor_data: XXX
+   ```
+3. Restart Invidious or the program that use the po_token functionality.
+
+### Tutorial without Docker
 1. Install Chromium or Google Chrome.
 2. Create a new virtualenv: `virtualenv venv`
 3. Activate the virtualenv: `source venv/bin/activate`
@@ -26,17 +37,27 @@ These identity tokens (po_token and visitor_data) generated using this tool will
    po_token: XXX
    visitor_data: XXX
    ```
-7. Restart Invidious.
+7. Restart Invidious or the program that use the po_token functionality.
 
-## Tutorial with Docker
-1. Run the script: `docker run quay.io/invidious/youtube-trusted-session-generator`
-2. Copy paste the values of these the two parameters (po_token and visitor_data) in config.yaml
-   ```
-   po_token: XXX
-   visitor_data: XXX
-   ```
-3. Restart Invidious.
 
-## Why running as root for Docker?
+### Why running as root for Docker?
 
 In "headless: false", Chromium does not support sanboxing when it is not ran by root user.
+
+## Tutorials for "always running" program: Get po_token on demand using HTTP.
+
+### Tutorial with Docker
+Run the program: `docker run -p 8080:8080 quay.io/invidious/youtube-trusted-session-generator:webserver`
+
+### Tutorial without Docker
+1. Install Chromium or Google Chrome.
+2. Create a new virtualenv: `virtualenv venv`
+3. Activate the virtualenv: `source venv/bin/activate`
+4. Install the dependencies: `pip install -r requirements.txt`
+5. Run the program: `python potoken-generator.py`
+
+### Usage of the HTTP API
+
+Send your requests to http://localhost:8080/token in order to obtain your po_token.
+
+You can also force refresh the po_token in the cache by sending a request to http://localhost:8080/update.
