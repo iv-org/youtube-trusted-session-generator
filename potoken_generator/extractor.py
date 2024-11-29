@@ -3,6 +3,7 @@ import dataclasses
 import json
 import logging
 import time
+import urllib.parse
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import mkdtemp
@@ -75,6 +76,7 @@ class PotokenExtractor:
         try:
             post_data_json = json.loads(post_data)
             visitor_data = post_data_json['context']['client']['visitorData']
+            visitor_data = urllib.parse.unquote(visitor_data).rstrip('=')
             potoken = post_data_json['serviceIntegrityDimensions']['poToken']
         except (json.JSONDecodeError, TypeError, KeyError) as e:
             logger.warning(f'failed to extract token from request: {type(e)}, {e}')
