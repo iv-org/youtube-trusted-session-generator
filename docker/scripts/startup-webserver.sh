@@ -11,13 +11,11 @@ sleep 2
 echo "[INFO] launching chromium instance"
 
 if [ -z $HOST ]; then
-	echo "[ERROR] Missing environment variable \$HOST."
-	exit 1
+	export HOST=0.0.0.0
 fi
 
 if [ -z $PORT ]; then
-	echo "[ERROR] Missing environment variable \$PORT."
-	exit 1
+	export PORT=8080
 fi
 
 # Run python script on display 0
