@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo "[INFO] internally launching GUI (X11 environment)"
 
@@ -10,5 +10,8 @@ sleep 2
 
 echo "[INFO] launching chromium instance"
 
+HOST=${HOST:-0.0.0.0}
+PORT=${PORT:-8080}
+
 # Run python script on display 0
-DISPLAY=:99 python potoken-generator.py --bind 0.0.0.0
+DISPLAY=:99 python potoken-generator.py --bind $HOST --port $PORT
