@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo "[INFO] internally launching GUI (X11 environment)"
 
