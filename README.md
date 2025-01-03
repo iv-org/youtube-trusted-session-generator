@@ -1,5 +1,7 @@
 # YouTube trusted session generator
 
+This project is tested with BrowserStack.
+
 ## Description
 
 This script will output two parameters: po_token and visitor_data. Needed for passing YouTube checks in Invidious or the program that use the po_token functionality.
